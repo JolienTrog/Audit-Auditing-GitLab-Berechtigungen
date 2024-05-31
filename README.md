@@ -21,6 +21,9 @@ Run to see what version of PHP is installed:
 ``` 
 php -v
 ``` 
+### Composer and Vendor
+
+Make sure you have Composer and Vendor/autoloader installed.
 
 ### Get your personal Access Token
 
