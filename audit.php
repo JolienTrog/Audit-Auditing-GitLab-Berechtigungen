@@ -1,4 +1,5 @@
 #!/usr/bin/env php
+
 //audit - GitLab Berechtigungsprüfung
 
 <?php
@@ -19,10 +20,9 @@ function Main(): void
 
     $token = GetToken($options);
 
-
     echo "-----------request--------" . PHP_EOL;
     $responseData = Request($options, $token);
-    if ($options["no-accessrole"]) {
+    if (!$options["no-accessrole"]) {
         $responseData = AccessRole($responseData);
     }
     Output($responseData, $options);
@@ -39,7 +39,7 @@ function Input(): array
         "token:",
         "json-file",
         "json",
-        "csv",
+        "csv-file",
         "pretty",
         "no-accessrole"
     ];
@@ -54,12 +54,23 @@ function Input(): array
 
     //accessrole wird per default von int wert in bezeichung laut gitlab umgewandelt. wenn zahlen benötigt werden kann diese funktion mit flag deaktivert werden
 
-    if (!isset($options["no-accessrole"])) {
-        $options["no-accessrole"] = true;
-    }
-
 
     if ((isset($options["p"]) || (isset($options["project"]))) || (isset($options["u"]) || (isset($options["user"])))) {
+        if(isset($options["csv-file"])){
+            $options["csv-file"] = true;
+        }
+        if(isset($options["json-file"])){
+            $options["json-file"] = true;
+        }
+        if(isset($options["json"])){
+            $options["json"] = true;
+        }
+        if(isset($options["pretty"])){
+            $options["pretty"] = true;
+        }
+        if(isset($options["no-accessrole"])){
+            $options["no-accessrole"] = true;
+        }
         return $options;
     } else {
         print "No correct Option. \n -p with Projekt ID \ -u with User ID \ -h for help \n";
@@ -77,6 +88,7 @@ function Input(): array
 
 function GetToken($options): string
 {
+
     // Persönlicher Access Token wird abgerufen über Flag -t/--token oder aus file
     if (isset($options["t"])) {
         $token = $options["t"];
@@ -85,14 +97,14 @@ function GetToken($options): string
     } else {
         $token = file_get_contents("accessToken.txt");
     }
-
+    if (empty(trim($token))) {
+        print "Error: No access token!\nGive it as flag -t/--token OR put it in the file 'accessToken.txt' \n";
+        exit(1);
+    }
     // Access Token formatieren
     $accessToken = "PRIVATE-TOKEN: $token";
 
-    if (empty(trim($token))) {
-        print "No access token!\nGive it as flag -t/--token OR put it in the file 'accessToken.txt' \n";
-        exit(1);
-    }
+
 
     return $accessToken;
 }
@@ -181,22 +193,55 @@ function AccessRole($responseData): array
     return $responseData;
 }
 
+function UniqueFileName($options): string
+{
+
+    $projectId = $options["p"];
+    $userId = $options["u"];
+
+    if($options["json-file"]) {
+        $baseFilename = "result_" . (isset($projectId) ? "project_$projectId" : "") . (isset($userId) ? "_user_$userId" : "") . ".json";
+    } elseif ($options["csv-file"]) {
+        $baseFilename = "result_" . (isset($projectId) ? "project_$projectId" : "") . (isset($userId) ? "_user_$userId" : "") . ".csv";
+    }
+    $pathInfo = pathinfo($baseFilename);
+    $basename = $pathInfo['filename'];
+    $extension = isset($pathInfo['extension']) ? "." . $pathInfo['extension'] : "";
+    $counter = 1;
+
+    $uniqueFileName = $basename . $extension;
+    while (file_exists($uniqueFileName)) {
+        $uniqueFileName = $basename . "_" . $counter . $extension;
+        $counter++;
+    }
+    return $uniqueFileName;
+}
+
 function Output($responseData, $options)
 {
 
 //Print the input ID of project or user
     if (isset($options["p"])) print "ProjektID: " . $options["p"] . PHP_EOL;
     if (isset($options["u"])) print "Username: " . $options["u"] . PHP_EOL;
+
+    //Output shown in human readable table
+    if (isset($options["pretty"])) {
+        foreach ($responseData as $member) {
+            foreach ($member as $item) {
+                echo "User: {$item['username']} - Role: {$item['access_level']}\n";
+            }
+        }
+    }
+
 //Output saved in JSON-file
     if (isset($options["json-file"])) {
 
-        $ProjectId = $options["p"];
-        $UserId = $options["u"];
-        $file = "result.json" . $UserId;
+        $file = UniqueFileName($options);
+        // $file = "result.json" . $UserId;
         $bytesWritten = file_put_contents($file, json_encode($responseData, JSON_PRETTY_PRINT));
 
         if ($bytesWritten !== false) {
-            $fileUrl = "file://" . realpath("result.json");
+            $fileUrl = "file://" . realpath($file);
             echo "\nData has been successfully saved to file result.json ($bytesWritten bytes)\n";
             echo "You can access [$fileUrl]\n";
         } else {
@@ -205,33 +250,47 @@ function Output($responseData, $options)
             $resetText = "\033[0m";
             echo "\n{$redText}Error:{$resetText} Failed to save data!\n";
         }
-        }
+    }
 //Output as pretty JSON
-        if(isset($options["json"])){
-            print json_encode($responseData, JSON_PRETTY_PRINT) . PHP_EOL;
-        }
+    if (isset($options["json"])) {
+        print json_encode($responseData, JSON_PRETTY_PRINT) . PHP_EOL;
+    }
 
 
     //Output saved in csv-file
-    if (isset($options["csv"])) {
-        $csvFile = fopen("responseData.csv", "x+");
-        foreach ($responseData as $row) {
-            fputcsv($csvFile, $row);
+    if (isset($options["csv-file"])) {
+        $file= UniqueFileName($options);
+        $csvFile = fopen($file, "w");
+
+        if ($csvFile !== false) {
+            // Extract header
+            $header = array_keys($responseData[0][0]);
+            fputcsv($csvFile, $header);
+
+            // Extract and write data rows
+            foreach ($responseData[0] as $row) {
+                $flatRow = [];
+                foreach ($header as $column) {
+                    $flatRow[] = is_array($row[$column]) ? json_encode($row[$column]) : $row[$column];
+                }
+                fputcsv($csvFile, $flatRow);
+            }
         }
-        $pointer = fgets($csvFile);
-        echo $pointer;
         fclose($csvFile);
-    }
-    //Output shown in human readable table
-    if (isset($options["pretty"])) {
-        $table = new ArrayToTextTable($responseData);
-        echo $table->render() . PHP_EOL;
-    }
 
-    //echo json_encode($responseData, JSON_PRETTY_PRINT) . PHP_EOL;
-    //print_r($responseData);*/
+        $fileUrl = "file://" . realpath($file);
+            echo "\nData has been successfully saved to file $file\n";
+            echo "You can access [$fileUrl]\n";
+    } else {
+            $redText = "\033[31m";
+            $resetText = "\033[0m";
+            echo "\n{$redText}Error:{$resetText} Failed to save data!\n";
+        }
 
+    if(!isset($options["json"]) && !isset($options["json-file"]) && !isset($options["csv-file"]) && !isset($options["pretty"])) {
+            print "Data in pretty json:\n";
+            print json_encode($responseData, JSON_PRETTY_PRINT) . PHP_EOL;
+    }
 
 }
-
 ?>
