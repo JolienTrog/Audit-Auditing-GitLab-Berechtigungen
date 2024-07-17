@@ -1,7 +1,7 @@
 # GitLab-Authority
 
 <div style="display: inline-block; vertical-align: middle;">
-    <img src="logo.jpeg" alt="Logo" width="50">
+    <img src="Images/logo.jpeg" alt="Logo" width="50">
     Welcome to a small program to check GitLab-Authority of Users and Projects. It is a Skript for the terminal written in PHP and using a Library for a nice table output.
 </div>
 
@@ -73,11 +73,11 @@ For example:
 
 ## Output for Projekt authority:
 
-![outputProjekt.jpg](outputProjekt.jpg)
+![outputProjekt.jpg](Images/outputProjekt.jpg)
 
 ## Output for User authority:
 
-![img_2.png](img_2.png)
+![img_2.png](Images/OutputUser.png)
 
 
 ## Authors
