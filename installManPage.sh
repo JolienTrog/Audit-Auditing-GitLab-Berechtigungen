@@ -10,7 +10,7 @@ fi
 mkdir -p /usr/local/man/man1/
 
 # Copy the manpage to the correct location
-cp man/audit.1 /usr/local/man/man1/
+cp docs/audit.1 /usr/local/man/man1/
 
 # Update the manpage database
 mandb

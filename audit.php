@@ -1,6 +1,6 @@
 #!/usr/bin/env php
 
-//audit - GitLab Berechtigungsprüfung
+audit - GitLab authorization check
 
 <?php
 require 'vendor/autoload.php';
@@ -22,6 +22,17 @@ function Main(): void
 
     echo "-----------request--------" . PHP_EOL;
     $responseData = Request($options, $token);
+    /*
+     *Problem bei der Verbindung
+     * 1. falsche URL
+     * 2. Keine Berechtigung: 	"401 Unauthorized"
+     *
+     */
+    if(empty($responseData)) {
+        //Fehlermeldung was ist los?
+        echo "somthing is wrong" . PHP_EOL;
+        exit;
+    }
     if (!$options["no-accessrole"]) {
         $responseData = AccessRole($responseData);
     }
@@ -31,61 +42,55 @@ function Main(): void
 
 function Input(): array
 {
-    $shortOpts = "p:u:ht:";
-    $longOpts = [
-        "project:",
-        "user:",
-        "help",
-        "token:",
-        "json-file",
-        "json",
-        "csv-file",
-        "pretty",
-        "no-accessrole"
-    ];
+    do {
+        $shortOpts = "p:u:ht:";
+        $longOpts = [
+            "project:",
+            "user:",
+            "help",
+            "token:",
+            "json-file",
+            "json",
+            "csv-file",
+            "pretty",
+            "no-accessrole"
+        ];
+        $options = getopt($shortOpts, $longOpts);
 
-    //hier fehlt die wiederholung der eingabe dann erst do-while aktivieren
-    //do {
-    /*  if (isset($options["h"])) {
-          //hier muss die manpage aufgerufen werden
-      }*/
-
-    $options = getopt($shortOpts, $longOpts);
-
-    //accessrole wird per default von int wert in bezeichung laut gitlab umgewandelt. wenn zahlen benötigt werden kann diese funktion mit flag deaktivert werden
-
-
-    if ((isset($options["p"]) || (isset($options["project"]))) || (isset($options["u"]) || (isset($options["user"])))) {
-        if(isset($options["csv-file"])){
-            $options["csv-file"] = true;
+        if ((isset($options["h"]) || (isset($options["help"])))) {
+            // Check if the manpage is installed
+            $output = shell_exec('man -w audit 2>/dev/null');
+            if (empty($output)) {
+                InstallLocalManPage();
+            } else {
+                system('man audit');
+            }
+            exit(0);
         }
-        if(isset($options["json-file"])){
-            $options["json-file"] = true;
-        }
-        if(isset($options["json"])){
-            $options["json"] = true;
-        }
-        if(isset($options["pretty"])){
-            $options["pretty"] = true;
-        }
-        if(isset($options["no-accessrole"])){
-            $options["no-accessrole"] = true;
-        }
-        return $options;
-    } else {
-        print "No correct Option. \n -p with Projekt ID \ -u with User ID \ -h for help \n";
-        print "Enter one Option. \n";
-        exit(1);
-        //erneuter Input plus hilfstext
-        /*$input = readline("Please enter options: ");
 
-        $_SERVER['argv'] = array_merge([$_SERVER['argv'][0]], explode(" ", $input));
-        $options = getopt($shortOpts, $longOpts);*/
-    }
-    // } while (!isset($options["p"]) || !isset($options["u"]));
-
+        if ((isset($options["p"]) || (isset($options["project"]))) || (isset($options["u"]) || (isset($options["user"])))) {
+            if (isset($options["csv-file"])) {
+                $options["csv-file"] = true;
+            }
+            if (isset($options["json-file"])) {
+                $options["json-file"] = true;
+            }
+            if (isset($options["json"])) {
+                $options["json"] = true;
+            }
+            if (isset($options["pretty"])) {
+                $options["pretty"] = true;
+            }
+            if (isset($options["no-accessrole"])) {
+                $options["no-accessrole"] = true;
+            }
+        } else {
+            print "No correct Option. \n -p with Projekt ID \ -u with User ID \ -h for help \n";
+            $options = readline("Please enter options: ");
+        }
+    } while (!isset($options["p"]) || !isset($options["u"]));
+    return $options;
 }
-
 function GetToken($options): string
 {
 
@@ -97,7 +102,7 @@ function GetToken($options): string
     } else {
         $token = file_get_contents("accessToken.txt");
     }
-    if (empty(trim($token))) {
+    if (empty(trim($token)) || $token == "<Put in here your personal access token>") {
         print "Error: No access token!\nGive it as flag -t/--token OR put it in the file 'accessToken.txt' \n";
         exit(1);
     }
@@ -117,41 +122,63 @@ function Request($options, $token): array
 
 //URL GitLab API zusammen setzen
     if (isset($idProjects)) {
-        $URL = "http://127.0.0.1:8081/api/v4/projects/$idProjects/members/all";
+        //eigentlich https://git.netways.de/
+        $URL = "http://172.17.0.1:80/api/v4/projects/$idProjects/members/all";
     } elseif (isset($idUser)) {
-        $URL = "http://127.0.0.1:8081/api/v4/users/$idUser/memberships";
+        $URL = "http://172.17.0.1:801/api/v4/users/$idUser/memberships";
     } else {
         print "ID is unknown \n";
     }
 
 //cURL-Handle initialisieren
     $ch = curl_init();
-    //curl_multi_init — Liefert ein cURL-Mehrfach-Handle
+//curl_multi_init — Liefert ein cURL-Mehrfach-Handle
 
 //Curl Optionen festlegen
     curl_setopt($ch, CURLOPT_URL, $URL);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array($token, "ACCEPT: application/json"));
 //error anzeigen lassen und in file schreiben
-    // curl_setopt($ch, CURLOPT_VERBOSE, true);
+   // curl_setopt($ch, CURLOPT_VERBOSE, true);
     curl_setopt($ch, CURLOPT_STDERR, fopen('php://stderr', 'w'));
-    /*   $errorMessage = file_get_contents('php://stderr');
-       echo "Fehlermeldung: " . $errorMessage;*/
+//    $errorMessage = file_get_contents('php://stderr');
+//       echo "Fehlermeldung: " . $errorMessage;
 
 //Anfrage ausführen und Rückgabe speichern (in json-Format)
     $response = curl_exec($ch);
     // var_dump(curl_getinfo($ch));
-    curl_close($ch);
-    $responseData = [];
-    // Fehlerbehandlung wenn URL nicht korrekt
+
+// Fehlerbehandlung wenn URL nicht korrekt
     if (curl_errno($ch)) {
         echo 'cURL Fehler: ' . curl_error($ch) . PHP_EOL;
-    } else {
+    }
+
+    curl_close($ch);
+    //Antwort verarbeiten wenn Request erfolgriche war
+    $responseData = [];
+
+    if ($response !== false) {
         $responseData[] = json_decode($response, true);
     }
     return $responseData;
 }
 
+function InstallLocalManPage(){
+    $manpage_path = __DIR__ . '/man/audit.1';
+    if (file_exists($manpage_path)) {
+        system("man $manpage_path");
+    } else {
+        echo "Manpage not found. Please run 'sudo ./installManPage.sh' to install it.\n";
+    }
+    exit(0);
+}
+
+
+
+/*
+ * Fehlermeldungen:
+ * unauthorized 	Der Nutzer ist zu dieser Anfrage nicht berechtigt.
+ */
 /**
  *
  * https://docs.gitlab.com/ee/api/access_requests.html#valid-access-levels

@@ -1,38 +1,48 @@
-  1 .TH audit audit\-0.1
-  2 .SH NAME
-  3 audit \-GitLab authority by projectID or userID
-  4 .SH SYNOPSIS
-  5 .B audit
-  6 .RB [ \-p
-  7 .IR projectID ]
-  8 .RB [ \-u
-  9 .IR userID]
- 10 .P
- 11 .BR audit
- 12 .SH DESCRIPTION
- 13
- 14 .B audit
- 15 is a programm to interact with the gitlab api to get to know about authority of users.
- 16 .SH OPTIONS
- 17 .TP
- 18 .B \-p
- 19 use for project ID to get user authority for this specific project
- 20 .TP
- 21 .B \-u
- 22 use for user ID to get all projects for this specific user
- 23 .TP
- 24 .B \-json
- 25 output in pretty json]
- 26 .TP
- 27 .B \-json-file
- 28 output saved in json-file in the same directory as the script
- 29 .TP
- 30 .B \-csv
- 31 output saved in csv-file in the same directory as the script
- 32
- 33 .SH AUTHOR
- 34 .B Jolien Trog
- 35
- 36 .SH COPYRiGHT
- 37 .B do what ever you want with it ;)
- 38
+.TH audit audit\-0.1
+.SH NAME
+audit \-GitLab Permission Check
+.SH SYNOPSIS
+.B audit
+.RB [ \-p
+.IR projectID ]
+.RB [ \-u
+.IR userID]
+.P
+.BR audit
+.SH DESCRIPTION
+
+.B audit
+is a programm to interact with the gitlab api to get to know about authority of users.
+.SH OPTIONS
+.TP
+.B \-p
+use for project ID to get user authority for this specific project
+.TP
+.B \-u
+use for user ID to get all projects for this specific user
+.TP
+.B \-json
+output in pretty json
+.TP
+.B \-json-file
+output saved in json-file in the same directory as the script
+.TP
+.B \-csv
+output saved in csv-file in the same directory as the script
+
+.TP
+.B \-no-accessrole
+By default, access roles are converted from integer values to their corresponding GitLab designations. If numeric values are required, this feature can be disabled with this flag.
+
+.SH EXAMPLES
+.B
+audit \-\-project 12345 \-\-token YOUR_ACCESS_TOKEN \-\-json\-file
+.P
+.B
+audit \-\-user 67890 \-\-token YOUR_ACCESS_TOKEN \-\-pretty
+
+.SH AUTHOR
+.B Jolien Trog
+
+.SH COPYRiGHT
+.B do what ever you want with it ;)
