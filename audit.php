@@ -42,7 +42,6 @@ function Main(): void
 
 function Input(): array
 {
-    do {
         $shortOpts = "p:u:ht:";
         $longOpts = [
             "project:",
@@ -63,12 +62,18 @@ function Input(): array
             if (empty($output)) {
                 InstallLocalManPage();
             } else {
+            // Execute local man page for audit
                 system('man audit');
             }
-            exit(0);
+            exit;
         }
+    if (!isset($options["p"]) && !isset($options["u"]) && !isset($options["h"])){
+        print "No correct Option. Please enter options: \n -p with Projekt ID \ -u with User ID \ -h for help \n";
+      exit;
+    }
 
-        if ((isset($options["p"]) || (isset($options["project"]))) || (isset($options["u"]) || (isset($options["user"])))) {
+
+//        if ((isset($options["p"]) || (isset($options["project"]))) || (isset($options["u"]) || (isset($options["user"])))) {
             if (isset($options["csv-file"])) {
                 $options["csv-file"] = true;
             }
@@ -84,11 +89,8 @@ function Input(): array
             if (isset($options["no-accessrole"])) {
                 $options["no-accessrole"] = true;
             }
-        } else {
-            print "No correct Option. \n -p with Projekt ID \ -u with User ID \ -h for help \n";
-            $options = readline("Please enter options: ");
-        }
-    } while (!isset($options["p"]) || !isset($options["u"]));
+//        }
+
     return $options;
 }
 function GetToken($options): string
