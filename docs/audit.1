@@ -1,18 +1,19 @@
-.TH audit audit\-0.1
+.TH audit 0.1 "July 2024"
 .SH NAME
-audit \-GitLab Permission Check
+audit \- GitLab Permission Check
 .SH SYNOPSIS
-.B audit
-.RB [ \-p
-.IR projectID ]
-.RB [ \-u
-.IR userID]
+.B audit [OPTION]...
 .P
-.BR audit
+.B \-p, --project
+.IR [projectID]
+.TP
+.B \-u, --user
+.IR [UserID]
 .SH DESCRIPTION
-
+.P
 .B audit
-is a programm to interact with the gitlab api to get to know about authority of users.
+is a programm to interact with the gitlab API to get to know about authority of users.
+
 .SH OPTIONS
 .TP
 .B \-p
