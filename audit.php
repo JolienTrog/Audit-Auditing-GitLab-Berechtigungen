@@ -1,19 +1,16 @@
-#!/usr/bin/env php
-
-audit - GitLab authorization check
-
 <?php
 require 'vendor/autoload.php';
 
 use dekor\ArrayToTextTable;
 
 // Fehler in Datei protokollieren
-//wenn nur audit oder audit help aufgerufen wird dann hilfstxt anzeigen
+//wenn nur audit.php oder audit.php help aufgerufen wird dann hilfstxt anzeigen
 ini_set('error_log', '/tmp/php_errors.log');
 Main();
 function Main(): void
 {
     //$prompt = readline();
+    print "audit - Gitlab authorization check";
     echo "-----------options--------" . PHP_EOL;
     $options = Input();
     var_dump($options);
@@ -58,12 +55,12 @@ function Input(): array
 
         if ((isset($options["h"]) || (isset($options["help"])))) {
             // Check if the manpage is installed
-            $output = shell_exec('man -w audit 2>/dev/null');
+            $output = shell_exec('man -w audit.php 2>/dev/null');
             if (empty($output)) {
                 InstallLocalManPage();
             } else {
-            // Execute local man page for audit
-                system('man audit');
+            // Execute local man page for audit.php
+                system('man audit.php');
             }
             exit;
         }
@@ -71,8 +68,6 @@ function Input(): array
         print "No correct Option. Please enter options: \n -p with Projekt ID \ -u with User ID \ -h for help \n";
       exit;
     }
-
-
 //        if ((isset($options["p"]) || (isset($options["project"]))) || (isset($options["u"]) || (isset($options["user"])))) {
             if (isset($options["csv-file"])) {
                 $options["csv-file"] = true;
@@ -95,7 +90,6 @@ function Input(): array
 }
 function GetToken($options): string
 {
-
     // Persönlicher Access Token wird abgerufen über Flag -t/--token oder aus file
     if (isset($options["t"])) {
         $token = $options["t"];
@@ -110,9 +104,6 @@ function GetToken($options): string
     }
     // Access Token formatieren
     $accessToken = "PRIVATE-TOKEN: $token";
-
-
-
     return $accessToken;
 }
 
@@ -124,9 +115,14 @@ function Request($options, $token): array
 
 //URL GitLab API zusammen setzen
     if (isset($idProjects)) {
-        //eigentlich https://git.netways.de/
+        //Netways URL
+        //$URL = "https://git.netways.de/api/v4/projects/$id/members/all";
+        //Testumgebung:
         $URL = "http://172.17.0.1:80/api/v4/projects/$idProjects/members/all";
     } elseif (isset($idUser)) {
+        //Netways URL:
+        //$URL = "https://git.netways.de/api/v4/users/$id/memberships";
+        //Testumgebung:
         $URL = "http://172.17.0.1:801/api/v4/users/$idUser/memberships";
     } else {
         print "ID is unknown \n";
@@ -166,7 +162,7 @@ function Request($options, $token): array
 }
 
 function InstallLocalManPage(){
-    $manpage_path = __DIR__ . '/man/audit.1';
+    $manpage_path = __DIR__ . '/man/audit.php.1';
     if (file_exists($manpage_path)) {
         system("man $manpage_path");
     } else {
