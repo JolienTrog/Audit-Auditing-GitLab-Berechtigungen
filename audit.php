@@ -1,16 +1,18 @@
 <?php
 require 'vendor/autoload.php';
-
 use dekor\ArrayToTextTable;
-
-// Fehler in Datei protokollieren
-//wenn nur audit.php oder audit.php help aufgerufen wird dann hilfstxt anzeigen
 ini_set('error_log', '/tmp/php_errors.log');
 Main();
+/**
+ * Main function to get user input, send request to GitLab API, and process the response.
+ * This function orchestrates the flow of the script, including input parsing, API request sending,
+ * and output formatting based on the provided options.
+ *
+ * @return void
+ */
 function Main(): void
 {
-    //$prompt = readline();
-    print "audit - Gitlab authorization check";
+    print PHP_EOL . "audit - Gitlab authorization check" . PHP_EOL;
     echo "-----------options--------" . PHP_EOL;
     $options = Input();
     var_dump($options);
@@ -23,10 +25,9 @@ function Main(): void
      *Problem bei der Verbindung
      * 1. falsche URL
      * 2. Keine Berechtigung: 	"401 Unauthorized"
-     *
      */
     if(empty($responseData)) {
-        //Fehlermeldung was ist los?
+        //error message
         echo "somthing is wrong" . PHP_EOL;
         exit;
     }
@@ -34,9 +35,12 @@ function Main(): void
         $responseData = AccessRole($responseData);
     }
     Output($responseData, $options);
-
 }
-
+/**
+ * Parse the input options from the user to get the project ID, user ID, and other options.
+ * @return array $options Array of parsed input options from the user to get the project ID, user ID, and other options.
+ *
+ */
 function Input(): array
 {
         $shortOpts = "p:u:ht:";
@@ -55,12 +59,16 @@ function Input(): array
 
         if ((isset($options["h"]) || (isset($options["help"])))) {
             // Check if the manpage is installed
-            $output = shell_exec('man -w audit.php 2>/dev/null');
+            $output = shell_exec('man -w audit 2>/dev/null');
             if (empty($output)) {
-                InstallLocalManPage();
+                echo "The man page for audit.php is not installed.\n";
+                echo "Create the man page with the following command:\n";
+                echo "Create a directory: mkdir -p /usr/local/man/man1/ \n";
+                echo "Copy the man page from doc/audit.1 to the directory: cp docs/audit.1 /usr/local/man/man1 \n";
+                echo "Update man page database: mandb \n\n";
             } else {
             // Execute local man page for audit.php
-                system('man audit.php');
+                system('man audit');
             }
             exit;
         }
@@ -68,7 +76,6 @@ function Input(): array
         print "No correct Option. Please enter options: \n -p with Projekt ID \ -u with User ID \ -h for help \n";
       exit;
     }
-//        if ((isset($options["p"]) || (isset($options["project"]))) || (isset($options["u"]) || (isset($options["user"])))) {
             if (isset($options["csv-file"])) {
                 $options["csv-file"] = true;
             }
@@ -84,75 +91,78 @@ function Input(): array
             if (isset($options["no-accessrole"])) {
                 $options["no-accessrole"] = true;
             }
-//        }
-
     return $options;
 }
+/**
+ * Get the access token from the user input or from the file.
+ * @param array $options Array of parsed input, here only used to set access token manually.
+ * @return string $accessToken Access token to authenticate the user with the GitLab API.
+ */
 function GetToken($options): string
 {
-    // Persönlicher Access Token wird abgerufen über Flag -t/--token oder aus file
+    // Access Token from input
     if (isset($options["t"])) {
         $token = $options["t"];
     } elseif (isset($options["token"])) {
         $token = $options["token"];
     } else {
+        // Access Token from file
         $token = file_get_contents("accessToken.txt");
     }
     if (empty(trim($token)) || $token == "<Put in here your personal access token>") {
         print "Error: No access token!\nGive it as flag -t/--token OR put it in the file 'accessToken.txt' \n";
         exit(1);
     }
-    // Access Token formatieren
     $accessToken = "PRIVATE-TOKEN: $token";
     return $accessToken;
 }
-
-//Request to GitLab API
+/**
+ * Send a request to the GitLab API to get the members of a project or the projects of a user.
+ * @param array $options Array of parsed input options from the user to get the project ID, user ID, and other options.
+ * @param string $token Access token to authenticate the user with the GitLab API.
+ * @return array $responseData Array of response data from the GitLab API.
+ */
 function Request($options, $token): array
 {
     $idProjects = $options["p"];
     $idUser = $options["u"];
 
-//URL GitLab API zusammen setzen
+//URL GitLab API for projects or users
     if (isset($idProjects)) {
         //Netways URL
         //$URL = "https://git.netways.de/api/v4/projects/$id/members/all";
-        //Testumgebung:
+        //URL for test environment:
         $URL = "http://172.17.0.1:80/api/v4/projects/$idProjects/members/all";
     } elseif (isset($idUser)) {
         //Netways URL:
         //$URL = "https://git.netways.de/api/v4/users/$id/memberships";
-        //Testumgebung:
+        //URL for test environment:
         $URL = "http://172.17.0.1:801/api/v4/users/$idUser/memberships";
     } else {
         print "ID is unknown \n";
     }
 
-//cURL-Handle initialisieren
+//start cURL-Handle
     $ch = curl_init();
-//curl_multi_init — Liefert ein cURL-Mehrfach-Handle
 
-//Curl Optionen festlegen
+//Set curl options
     curl_setopt($ch, CURLOPT_URL, $URL);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array($token, "ACCEPT: application/json"));
-//error anzeigen lassen und in file schreiben
+    //shows error message
    // curl_setopt($ch, CURLOPT_VERBOSE, true);
     curl_setopt($ch, CURLOPT_STDERR, fopen('php://stderr', 'w'));
 //    $errorMessage = file_get_contents('php://stderr');
 //       echo "Fehlermeldung: " . $errorMessage;
-
-//Anfrage ausführen und Rückgabe speichern (in json-Format)
+//execute curl request and save response (in json format)
     $response = curl_exec($ch);
     // var_dump(curl_getinfo($ch));
-
-// Fehlerbehandlung wenn URL nicht korrekt
+//Error handling if URL is not correct
     if (curl_errno($ch)) {
         echo 'cURL Fehler: ' . curl_error($ch) . PHP_EOL;
     }
-
     curl_close($ch);
-    //Antwort verarbeiten wenn Request erfolgriche war
+
     $responseData = [];
 
     if ($response !== false) {
@@ -160,25 +170,14 @@ function Request($options, $token): array
     }
     return $responseData;
 }
-
-function InstallLocalManPage(){
-    $manpage_path = __DIR__ . '/man/audit.php.1';
-    if (file_exists($manpage_path)) {
-        system("man $manpage_path");
-    } else {
-        echo "Manpage not found. Please run 'sudo ./installManPage.sh' to install it.\n";
-    }
-    exit(0);
-}
-
-
-
 /*
  * Fehlermeldungen:
  * unauthorized 	Der Nutzer ist zu dieser Anfrage nicht berechtigt.
  */
 /**
- *
+ * Convert the access level number to a human-readable access role.
+ * @param $responseData Array of response data from the GitLab API.
+ * @return array $accessRole Array of response data from the GitLab API with human-readable access roles.
  * https://docs.gitlab.com/ee/api/access_requests.html#valid-access-levels
  */
 function AccessRole($responseData): array
@@ -217,10 +216,13 @@ function AccessRole($responseData): array
     }
     return $responseData;
 }
-
+/**
+ * Generate a unique filename for the output file.
+ * @param array $options Assign what kind of output file should be created.
+ * @return string $uniqueFileName Unique filename for the output file.
+ */
 function UniqueFileName($options): string
 {
-
     $projectId = $options["p"];
     $userId = $options["u"];
 
@@ -241,10 +243,14 @@ function UniqueFileName($options): string
     }
     return $uniqueFileName;
 }
-
-function Output($responseData, $options)
+/**
+ * Output the response data in a human-readable table, JSON, or CSV format.
+ * @param array $responseData Array of response data from the GitLab API.
+ * @param array $options Array of parsed input options from the user to get Project Data, User Data and authorization level.
+ * @return void
+ */
+function Output($responseData, $options) : void
 {
-
 //Print the input ID of project or user
     if (isset($options["p"])) print "ProjektID: " . $options["p"] . PHP_EOL;
     if (isset($options["u"])) print "Username: " . $options["u"] . PHP_EOL;
@@ -280,7 +286,6 @@ function Output($responseData, $options)
     if (isset($options["json"])) {
         print json_encode($responseData, JSON_PRETTY_PRINT) . PHP_EOL;
     }
-
 
     //Output saved in csv-file
     if (isset($options["csv-file"])) {
