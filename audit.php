@@ -15,7 +15,7 @@ function Main(): void
     print PHP_EOL . "audit - Gitlab authorization check" . PHP_EOL;
     echo "-----------options--------" . PHP_EOL;
     $options = Input();
-    var_dump($options);
+    //var_dump($options);
 
     $token = GetToken($options);
 
@@ -26,11 +26,11 @@ function Main(): void
      * 1. falsche URL
      * 2. Keine Berechtigung: 	"401 Unauthorized"
      */
-    if(empty($responseData)) {
-        //error message
-        echo "somthing is wrong" . PHP_EOL;
-        exit;
-    }
+//    if(empty($responseData)) {
+//        //error message
+//        echo "somthing is wrong" . PHP_EOL;
+//        exit;
+//    }
     if (!$options["no-accessrole"]) {
         $responseData = AccessRole($responseData);
     }
@@ -149,19 +149,35 @@ function Request($options, $token): array
     curl_setopt($ch, CURLOPT_URL, $URL);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array($token, "ACCEPT: application/json"));
-    //shows error message
-   // curl_setopt($ch, CURLOPT_VERBOSE, true);
-    curl_setopt($ch, CURLOPT_STDERR, fopen('php://stderr', 'w'));
-//    $errorMessage = file_get_contents('php://stderr');
-//       echo "Fehlermeldung: " . $errorMessage;
-//execute curl request and save response (in json format)
+
+    //extract and save error message in a temp. file
+    $tempFile = tmpfile();
+    if ($tempFile === false) {
+        echo "Error: Fail to create a temporarily file for error-messages.";
+        exit;
+    }
+    $metaData = stream_get_meta_data($tempFile);
+    $tempFileName = $metaData['uri'];
+    curl_setopt($ch, CURLOPT_STDERR, $tempFile);
+    curl_setopt($ch, CURLOPT_VERBOSE, true);
+
+//execute curl request
     $response = curl_exec($ch);
-    // var_dump(curl_getinfo($ch));
-//Error handling if URL is not correct
+
+//Error handling
     if (curl_errno($ch)) {
+        $stderrOutput = file_get_contents($tempFileName);
+        $httpStatusCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $curlInfo = curl_getinfo($ch);
         echo 'cURL Fehler: ' . curl_error($ch) . PHP_EOL;
+        echo "HTTP-Statuscode: " . $httpStatusCode. PHP_EOL;
+        echo "cURL-Info: " . print_r($curlInfo, true) . PHP_EOL;
+        echo "STDERR Ausgabe: " . $stderrOutput;
+        echo $stderrOutput . PHP_EOL;
+        exit;
     }
     curl_close($ch);
+    fclose($tempFile);
 
     $responseData = [];
 
