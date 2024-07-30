@@ -15,7 +15,7 @@ function Main(): void
     print PHP_EOL . "audit - Gitlab authorization check" . PHP_EOL;
     echo "-----------options--------" . PHP_EOL;
     $options = Input();
-    //var_dump($options);
+    var_dump($options);
 
     $token = GetToken($options);
 
@@ -57,40 +57,50 @@ function Input(): array
         ];
         $options = getopt($shortOpts, $longOpts);
 
-        if ((isset($options["h"]) || (isset($options["help"])))) {
-            // Check if the manpage is installed
-            $output = shell_exec('man -w audit 2>/dev/null');
-            if (empty($output)) {
-                echo "The man page for audit.php is not installed.\n";
-                echo "Create the man page with the following command:\n";
-                echo "Create a directory: mkdir -p /usr/local/man/man1/ \n";
-                echo "Copy the man page from doc/audit.1 to the directory: cp docs/audit.1 /usr/local/man/man1 \n";
-                echo "Update man page database: mandb \n\n";
-            } else {
-            // Execute local man page for audit.php
-                system('man audit');
-            }
-            exit;
+
+    if ((isset($options["h"]) || (isset($options["help"])))) {
+        // Check if the manpage is installed
+        $output = shell_exec('man -w audit 2>/dev/null');
+        if (empty($output)) {
+            printErrorMessage("The man page for audit.php is not installed.\n");
+            echo "Create the man page with the following command:\n";
+            echo "Create a directory: mkdir -p /usr/local/man/man1/ \n";
+            echo "Copy the man page from doc/audit.1 to the directory: cp docs/audit.1 /usr/local/man/man1 \n";
+            echo "Update man page database: mandb \n\n";
+        } else {
+        // Execute local man page for audit.php
+            system('man audit');
         }
+        exit;
+    }
     if (!isset($options["p"]) && !isset($options["u"]) && !isset($options["h"])){
-        print "No correct Option. Please enter options: \n -p with Projekt ID \ -u with User ID \ -h for help \n";
+        printErrorMessage("No correct Option.", "yellow");
+        print "Please enter options: \n -p with Projekt ID \ -u with User ID \ -h for help \n";
       exit;
     }
-            if (isset($options["csv-file"])) {
-                $options["csv-file"] = true;
-            }
-            if (isset($options["json-file"])) {
-                $options["json-file"] = true;
-            }
-            if (isset($options["json"])) {
-                $options["json"] = true;
-            }
-            if (isset($options["pretty"])) {
-                $options["pretty"] = true;
-            }
-            if (isset($options["no-accessrole"])) {
-                $options["no-accessrole"] = true;
-            }
+    if (isset($options["p"]) && !is_numeric($options["p"])) {
+        printErrorMessage("Error: The projekt ID must be a number.", "yellow");
+        exit;
+    }
+    if (isset($options["u"]) && !is_numeric($options["u"])) {
+        printErrorMessage("Error: The user ID must be a number.", "yellow");
+        exit;
+    }
+    if (isset($options["csv-file"])) {
+        $options["csv-file"] = true;
+    }
+    if (isset($options["json-file"])) {
+        $options["json-file"] = true;
+    }
+    if (isset($options["json"])) {
+        $options["json"] = true;
+    }
+    if (isset($options["pretty"])) {
+        $options["pretty"] = true;
+    }
+    if (isset($options["no-accessrole"])) {
+        $options["no-accessrole"] = true;
+    }
     return $options;
 }
 /**
@@ -110,8 +120,14 @@ function GetToken($options): string
         $token = file_get_contents("accessToken.txt");
     }
     if (empty(trim($token)) || $token == "<Put in here your personal access token>") {
-        print "Error: No access token!\nGive it as flag -t/--token OR put it in the file 'accessToken.txt' \n";
-        exit(1);
+        printErrorMessage("Error: No access token!");
+        print "Give it as flag -t/--token OR put it in the file 'accessToken.txt' \n";
+        exit;
+    }
+   //Validate access token
+    if (!preg_match('/^glpat-[\w-]{20}$/', $token)) {
+        printErrorMessage("The access token appears to be invalide. Check the format.". PHP_EOL, "yellow");
+        exit;
     }
     $accessToken = "PRIVATE-TOKEN: $token";
     return $accessToken;
@@ -137,9 +153,9 @@ function Request($options, $token): array
         //Netways URL:
         //$URL = "https://git.netways.de/api/v4/users/$id/memberships";
         //URL for test environment:
-        $URL = "http://172.17.0.1:801/api/v4/users/$idUser/memberships";
+        $URL = "http://172.17.0.1:80/api/v4/users/$idUser/memberships";
     } else {
-        print "ID is unknown \n";
+        printErrorMessage ("ID is unknown \n", "yellow");
     }
 
 //start cURL-Handle
@@ -271,6 +287,8 @@ function Output($responseData, $options) : void
     if (isset($options["p"])) print "ProjektID: " . $options["p"] . PHP_EOL;
     if (isset($options["u"])) print "Username: " . $options["u"] . PHP_EOL;
 
+//check directory writable
+
     //Output shown in human readable table
     if (isset($options["pretty"])) {
         foreach ($responseData as $member) {
@@ -289,13 +307,11 @@ function Output($responseData, $options) : void
 
         if ($bytesWritten !== false) {
             $fileUrl = "file://" . realpath($file);
-            echo "\nData has been successfully saved to file result.json ($bytesWritten bytes)\n";
+            printErrorMessage("Data has been successfully saved.", "green");
+            echo "File result.json ($bytesWritten bytes)\n";
             echo "You can access [$fileUrl]\n";
         } else {
-            // ANSI-Escape-Sequenz für roten Text
-            $redText = "\033[31m";
-            $resetText = "\033[0m";
-            echo "\n{$redText}Error:{$resetText} Failed to save data!\n";
+            printErrorMessage("Error: Failed to save data!");
         }
     }
 //Output as pretty JSON
@@ -325,12 +341,11 @@ function Output($responseData, $options) : void
         fclose($csvFile);
 
         $fileUrl = "file://" . realpath($file);
-            echo "\nData has been successfully saved to file $file\n";
+            printErrorMessage("\nData has been successfully saved.", "green");
+            echo "\nFile $file\n";
             echo "You can access [$fileUrl]\n";
     } else {
-            $redText = "\033[31m";
-            $resetText = "\033[0m";
-            echo "\n{$redText}Error:{$resetText} Failed to save data!\n";
+        printErrorMessage("Error: Failed to save data! \n");
         }
 
     if(!isset($options["json"]) && !isset($options["json-file"]) && !isset($options["csv-file"]) && !isset($options["pretty"])) {
@@ -338,5 +353,24 @@ function Output($responseData, $options) : void
             print json_encode($responseData, JSON_PRETTY_PRINT) . PHP_EOL;
     }
 
+}
+/**
+ * Print an error message in the specified color.
+ *
+ * @param string $message The error message to print.
+ * @param string $color The color to print the message in (default is red).
+ * @return void
+ */
+function printErrorMessage(string $message, string $color = 'red'): void
+{
+    $colors = [
+        'red' => "\033[31m",
+        'green' => "\033[32m",
+        'yellow' => "\033[33m",
+    ];
+
+    $colorCode = $colors[$color] ?? $colors['red'];
+    $resetCode = "\033[0m";
+    print "{$colorCode}{$message}{$resetCode}" . PHP_EOL;
 }
 ?>
