@@ -20,22 +20,37 @@ function Main(): void
     $token = GetToken($options);
 
     echo "-----------request--------" . PHP_EOL;
-    $responseData = Request($options, $token);
-    /*
-     *Problem bei der Verbindung
-     * 1. falsche URL
-     * 2. Keine Berechtigung: 	"401 Unauthorized"
-     */
-//    if(empty($responseData)) {
-//        //error message
-//        echo "somthing is wrong" . PHP_EOL;
-//        exit;
-//    }
+    $page = $options['page'] ?? 1;
+    $perPage = $options['perPage'] ?? 20;
+    $response = Request($options, $token);
+    $responseData = $response['data'];
+    $totalPages = $response['totalPages'];
+
+    echo "Total Pages: $totalPages\n";
+
+    if(isset($options['page'])) {
+        if ($page > $totalPages) {
+            printErrorMessage("There is no page $page. Total Amount of pages: $totalPages");
+            exit;
+        }
+        echo "Processing page $page of $totalPages\n";
+    } else {
+        // Loop through pages if totalPages is greater than 1
+        while ($page <= $totalPages) {
+            echo "Processing page $page of $totalPages\n";
+            $options['page'] = $page;
+            $response = Request($options, $token);
+            $responseData = array_merge($responseData, $response['data']);
+            $page++;
+        }
+    }
+
     if (!$options["no-accessrole"]) {
         $responseData = AccessRole($responseData);
     }
     Output($responseData, $options);
 }
+
 /**
  * Parse the input options from the user to get the project ID, user ID, and other options.
  * @return array $options Array of parsed input options from the user to get the project ID, user ID, and other options.
@@ -45,18 +60,19 @@ function Input(): array
 {
         $shortOpts = "p:u:ht:";
         $longOpts = [
-            "project:",
-            "user:",
+            //"project:",
+            //"user:",
             "help",
             "token:",
             "json-file",
             "json",
             "csv-file",
             "pretty",
-            "no-accessrole"
+            "no-accessrole",
+            "perPage:",
+            "page:"
         ];
         $options = getopt($shortOpts, $longOpts);
-
 
     if ((isset($options["h"]) || (isset($options["help"])))) {
         // Check if the manpage is installed
@@ -82,8 +98,17 @@ function Input(): array
         printErrorMessage("Error: The projekt ID must be a number.", "yellow");
         exit;
     }
+
     if (isset($options["u"]) && !is_numeric($options["u"])) {
         printErrorMessage("Error: The user ID must be a number.", "yellow");
+        exit;
+    }
+    if (isset($options["perPage"]) && !is_numeric($options["perPage"])) {
+        printErrorMessage("Error: The amount of output per page must be a number.", "yellow");
+        exit;
+    }
+    if (isset($options["page"]) && !is_numeric($options["page"])) {
+        printErrorMessage("Error: The page must be a number.", "yellow");
         exit;
     }
     if (isset($options["csv-file"])) {
@@ -138,22 +163,28 @@ function GetToken($options): string
  * @param string $token Access token to authenticate the user with the GitLab API.
  * @return array $responseData Array of response data from the GitLab API.
  */
-function Request($options, $token): array
+function Request(array $options, string $token): array
 {
     $idProjects = $options["p"];
     $idUser = $options["u"];
+    $page = $options['page'];
+    $perPage = $options['perPage'];
 
-//URL GitLab API for projects or users
+    //default per page is 20 max is 100
+
+    print "this is in the variable: " . $perPage . PHP_EOL;
+
+//URL GitLab API for projects $offset = ($page - 1) * $perPage; or users
     if (isset($idProjects)) {
         //Netways URL
-        //$URL = "https://git.netways.de/api/v4/projects/$id/members/all";
+        //$URL = "https://git.netways.de/api/v4/projects/$id/members/all?per-page=$perPage&page=&page";
         //URL for test environment:
-        $URL = "http://172.17.0.1:80/api/v4/projects/$idProjects/members/all";
+        $URL = "http://172.17.0.1:80/api/v4/projects/$idProjects/members/all?per_page=$perPage&page=$page";
     } elseif (isset($idUser)) {
         //Netways URL:
-        //$URL = "https://git.netways.de/api/v4/users/$id/memberships";
+        //$URL = "https://git.netways.de/api/v4/users/$id/memberships?per-page=$perPage&page=&page";
         //URL for test environment:
-        $URL = "http://172.17.0.1:80/api/v4/users/$idUser/memberships";
+        $URL = "http://172.17.0.1:80/api/v4/users/$idUser/memberships?per_page=$perPage&page=$page";
     } else {
         printErrorMessage ("ID is unknown \n", "yellow");
     }
@@ -165,8 +196,9 @@ function Request($options, $token): array
     curl_setopt($ch, CURLOPT_URL, $URL);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array($token, "ACCEPT: application/json"));
+    curl_setopt($ch, CURLOPT_HEADER, true);
 
-    //extract and save error message in a temp. file
+//extract and save error message in a temp. file
     $tempFile = tmpfile();
     if ($tempFile === false) {
         echo "Error: Fail to create a temporarily file for error-messages.";
@@ -179,7 +211,11 @@ function Request($options, $token): array
 
 //execute curl request
     $response = curl_exec($ch);
+    $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+    $header = substr($response, 0, $headerSize);
+    $body = substr($response, $headerSize);
 
+    var_dump($header);
 //Error handling
     if (curl_errno($ch)) {
         $stderrOutput = file_get_contents($tempFileName);
@@ -192,16 +228,33 @@ function Request($options, $token): array
         echo $stderrOutput . PHP_EOL;
         exit;
     }
+
     curl_close($ch);
     fclose($tempFile);
 
-    $responseData = [];
-
-    if ($response !== false) {
-        $responseData[] = json_decode($response, true);
+    // Extract total-items and total-pages from the header
+//    $totalItems = null;
+    $totalPages = null;
+//    if (preg_match('/X-Total: (\d+)/', $header, $matches)) {
+//        $totalItems = (int)$matches[1];
+//    }
+    if (preg_match('/X-Total-Pages: (\d+)/', $header, $matches)) {
+        $totalPages = (int)$matches[1];
     }
-    return $responseData;
+
+    $responseData = [];
+    if ($body !== false) {
+        $responseData[] = json_decode($body, true);
+    }
+
+    // Return response data along with pagination info
+    return [
+        'data' => $responseData,
+//        'totalItems' => $totalItems,
+        'totalPages' => $totalPages
+    ];
 }
+
 /*
  * Fehlermeldungen:
  * unauthorized 	Der Nutzer ist zu dieser Anfrage nicht berechtigt.
@@ -311,7 +364,7 @@ function Output($responseData, $options) : void
             echo "File result.json ($bytesWritten bytes)\n";
             echo "You can access [$fileUrl]\n";
         } else {
-            printErrorMessage("Error: Failed to save data!");
+            printErrorMessage("Error: Failed to save data in json-file!");
         }
     }
 //Output as pretty JSON
@@ -321,7 +374,7 @@ function Output($responseData, $options) : void
 
     //Output saved in csv-file
     if (isset($options["csv-file"])) {
-        $file= UniqueFileName($options);
+        $file = UniqueFileName($options);
         $csvFile = fopen($file, "w");
 
         if ($csvFile !== false) {
@@ -337,16 +390,17 @@ function Output($responseData, $options) : void
                 }
                 fputcsv($csvFile, $flatRow);
             }
+        } else {
+            printErrorMessage("Error: Failed to save data in csv-file! \n");
         }
         fclose($csvFile);
 
         $fileUrl = "file://" . realpath($file);
-            printErrorMessage("\nData has been successfully saved.", "green");
-            echo "\nFile $file\n";
-            echo "You can access [$fileUrl]\n";
-    } else {
-        printErrorMessage("Error: Failed to save data! \n");
-        }
+        printErrorMessage("\nData has been successfully saved.", "green");
+        echo "\nFile $file\n";
+        echo "You can access [$fileUrl]\n";
+    }
+
 
     if(!isset($options["json"]) && !isset($options["json-file"]) && !isset($options["csv-file"]) && !isset($options["pretty"])) {
             print "Data in pretty json:\n";
