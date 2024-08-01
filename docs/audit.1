@@ -5,10 +5,11 @@ audit \- GitLab Permission Check
 .B audit [OPTION]...
 .P
 .B \-p, --project
-.IR [projectID]
-.TP
-.B \-u, --user
-.IR [UserID]
+.I [projectID]
+.P
+.B \-u, \--user
+.I [UserID]
+
 .SH DESCRIPTION
 .P
 .B audit
@@ -16,24 +17,32 @@ is a programm to interact with the gitlab API to get to know about authority of 
 
 .SH OPTIONS
 .TP
-.B \-p
-use for project ID to get user authority for this specific project
+.B \-p, --project
+Use for project ID to get user authority for this specific project
 .TP
-.B \-u
-use for user ID to get all projects for this specific user
+.B \-u, --user
+Use for user ID to get all projects for this specific user
 .TP
 .B \-json
-output in pretty json
+Output in pretty json
 .TP
 .B \-json-file
-output saved in json-file in the same directory as the script
+Output saved in json-file in the same directory as the script
 .TP
 .B \-csv
-output saved in csv-file in the same directory as the script
+Output saved in csv-file in the same directory as the script
 
 .TP
 .B \-no-accessrole
 By default, access roles are converted from integer values to their corresponding GitLab designations. If numeric values are required, this feature can be disabled with this flag.
+
+.TP
+.B \--page
+Select one specific page
+
+.TP
+.B \--perPage
+Select the amount of items on one page
 
 .SH EXAMPLES
 .B

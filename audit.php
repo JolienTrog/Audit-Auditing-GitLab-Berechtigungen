@@ -25,8 +25,10 @@ function Main(): void
     $response = Request($options, $token);
     $responseData = $response['data'];
     $totalPages = $response['totalPages'];
+    $totalItems = $response['totalItems'];
 
     echo "Total Pages: $totalPages\n";
+    echo "Total Items: $totalItems\n";
 
     if(isset($options['page'])) {
         if ($page > $totalPages) {
@@ -60,8 +62,8 @@ function Input(): array
 {
         $shortOpts = "p:u:ht:";
         $longOpts = [
-            //"project:",
-            //"user:",
+            "project:",
+            "user:",
             "help",
             "token:",
             "json-file",
@@ -73,7 +75,13 @@ function Input(): array
             "page:"
         ];
         $options = getopt($shortOpts, $longOpts);
+    if (isset($options["project"])) {
+        $options["p"] = $options["project"];
+    }
 
+    if (isset($options["user"])) {
+        $options["u"] = $options["user"];
+    }
     if ((isset($options["h"]) || (isset($options["help"])))) {
         // Check if the manpage is installed
         $output = shell_exec('man -w audit 2>/dev/null');
@@ -172,8 +180,6 @@ function Request(array $options, string $token): array
 
     //default per page is 20 max is 100
 
-    print "this is in the variable: " . $perPage . PHP_EOL;
-
 //URL GitLab API for projects $offset = ($page - 1) * $perPage; or users
     if (isset($idProjects)) {
         //Netways URL
@@ -215,7 +221,6 @@ function Request(array $options, string $token): array
     $header = substr($response, 0, $headerSize);
     $body = substr($response, $headerSize);
 
-    var_dump($header);
 //Error handling
     if (curl_errno($ch)) {
         $stderrOutput = file_get_contents($tempFileName);
@@ -233,11 +238,11 @@ function Request(array $options, string $token): array
     fclose($tempFile);
 
     // Extract total-items and total-pages from the header
-//    $totalItems = null;
+    $totalItems = null;
     $totalPages = null;
-//    if (preg_match('/X-Total: (\d+)/', $header, $matches)) {
-//        $totalItems = (int)$matches[1];
-//    }
+    if (preg_match('/X-Total: (\d+)/', $header, $matches)) {
+        $totalItems = (int)$matches[1];
+    }
     if (preg_match('/X-Total-Pages: (\d+)/', $header, $matches)) {
         $totalPages = (int)$matches[1];
     }
@@ -250,11 +255,121 @@ function Request(array $options, string $token): array
     // Return response data along with pagination info
     return [
         'data' => $responseData,
-//        'totalItems' => $totalItems,
+        'totalItems' => $totalItems,
         'totalPages' => $totalPages
     ];
 }
-
+//function Request(array $options, string $token): array
+//{
+//    $idProjects = $options["p"];
+//    $idUser = $options["u"];
+//    $page = $options['page'] ?? 1;
+//    $perPage = $options['perPage'] ?? 20;
+//
+//    // URL GitLab API for projects or users
+//    if (isset($idProjects)) {
+//        $URL = "http://172.17.0.1:80/api/v4/projects/$idProjects/members/all?per_page=$perPage&page=$page";
+//    } elseif (isset($idUser)) {
+//        $URL = "http://172.17.0.1:80/api/v4/users/$idUser/memberships?per_page=$perPage&page=$page";
+//    } else {
+//        printErrorMessage("ID is unknown \n", "yellow");
+//        return [];
+//    }
+//
+//    // Start cURL-Handle
+//    $ch = curl_init();
+//
+//    // Set cURL options
+//    curl_setopt($ch, CURLOPT_URL, $URL);
+//    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+//    curl_setopt($ch, CURLOPT_HTTPHEADER, array($token, "ACCEPT: application/json"));
+//    curl_setopt($ch, CURLOPT_HEADER, true); // Include header in the output
+//
+//    // Extract and save error message in a temp. file
+//    $tempFile = tmpfile();
+//    if ($tempFile === false) {
+//        echo "Error: Fail to create a temporarily file for error-messages.";
+//        exit;
+//    }
+//    $metaData = stream_get_meta_data($tempFile);
+//    $tempFileName = $metaData['uri'];
+//    curl_setopt($ch, CURLOPT_STDERR, $tempFile);
+//    curl_setopt($ch, CURLOPT_VERBOSE, true);
+//
+//    // Execute cURL request
+//    $response = curl_exec($ch);
+//
+//    // Separate header and body
+//    $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+//    $header = substr($response, 0, $headerSize);
+//    $body = substr($response, $headerSize);
+//
+//    // Error handling
+//    $httpStatusCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+//    $curlError = curl_error($ch);
+//    curl_close($ch);
+//    fclose($tempFile);
+//
+//    // Read the contents of the temporary file
+//    $stderrOutput = file_get_contents($tempFileName);
+//
+//    // Output the error messages
+//    if ($curlError) {
+//        echo "cURL Error: $curlError\n";
+//        echo "Detailed Error: $stderrOutput\n";
+//        exit;
+//    }
+//
+//    // Output the header information
+////    echo "HTTP Status Code: $httpStatusCode\n";
+////    echo "Header Information: $header\n";
+//
+//    // Map of HTTP status codes to their descriptions
+//    $httpStatusDescriptions = [
+//        200 => "OK: The GET, PUT, PATCH or DELETE request was successful, and the resource itself is returned as JSON.",
+//        201 => "Created: The POST request was successful, and the resource is returned as JSON.",
+//        202 => "Accepted: The GET, PUT or DELETE request was successful, and the resource is scheduled for processing.",
+//        204 => "No Content: The server has successfully fulfilled the request, and there is no additional content to send in the response payload body.",
+//        301 => "Moved Permanently: The resource has been definitively moved to the URL given by the Location headers.",
+//        304 => "Not Modified: The resource hasn’t been modified since the last request.",
+//        400 => "Bad Request: A required attribute of the API request is missing.",
+//        401 => "Unauthorized: The user isn’t authenticated. A valid user token is necessary.",
+//        403 => "Forbidden: The request isn’t allowed.",
+//        404 => "Not Found: A resource couldn’t be accessed.",
+//        405 => "Method Not Allowed: The request isn’t supported.",
+//        409 => "Conflict: A conflicting resource already exists.",
+//        412 => "Precondition Failed: The request was denied.",
+//        422 => "Unprocessable: The entity couldn’t be processed.",
+//        429 => "Too Many Requests: The user exceeded the application rate limits.",
+//        500 => "Server Error: While handling the request, something went wrong on the server.",
+//        503 => "Service Unavailable: The server cannot handle the request because the server is temporarily overloaded."
+//    ];
+//
+//    // Output the meaning of the HTTP status code
+//    if (isset($httpStatusDescriptions[$httpStatusCode])) {
+//        echo "Status Description: " . $httpStatusDescriptions[$httpStatusCode] . "\n";
+//    } else {
+//        echo "Status Description: Unknown status code.\n";
+//    }
+//
+//    // Handle specific status codes
+//    if ($httpStatusCode == 404) {
+//        echo "Error: The project or user was not found.\n";
+//        exit;
+//    }
+//
+//    $responseData = [];
+//    if ($body !== false) {
+//        $responseData[] = json_decode($body, true);
+//    }
+//
+//    // Return response data along with pagination info
+//    return [
+//        'data' => $responseData,
+//        'totalItems' => null,
+//        'totalPages' => null
+//    ];
+//}
 /*
  * Fehlermeldungen:
  * unauthorized 	Der Nutzer ist zu dieser Anfrage nicht berechtigt.
