@@ -54,8 +54,7 @@ mkdir -p /usr/local/man/man1/
 cp docs/audit.1 /usr/local/man/man1/
 # Update the manpage database and filter the output
 MAND_OUTPUT=$(mktemp)
-mandb &> "$MAND_OUTPUT"
-grep -E 'Handbuchverzeichnisse enthielten neuere Handbuchseiten|Handbuchseiten wurden hinzugefügt' "$MAND_OUTPUT"
+LANG=en_US.UTF-8 mandb &> "$MAND_OUTPUT"
 rm "$MAND_OUTPUT"
 
 echo "Manpage installed successfully. For help call '-h' or '--help'"
