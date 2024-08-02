@@ -1,8 +1,9 @@
-# GitLab-Authority
+# audit - GitLab-Authority
 
 <div style="display: inline-block; vertical-align: middle;">
     <img src="Images/logo.jpeg" alt="Logo" width="50">
-    Welcome to a small program to check GitLab-Authority of Users and Projects. It is a Skript for the terminal written in PHP and using a Library for a nice table output.
+    Welcome to the small program 'audit' to check GitLab-Authority of Users and Projects. 
+It is a Skript for the terminal, written in PHP. It uses the GitLab REST API and gives by default a json output.
 </div>
 
 ## Getting started
@@ -47,38 +48,34 @@ You can create as many personal access tokens as you like.
 Save the personal access token somewhere safe. After you leave the page, you no longer have access to the token.
 
 
-### Execute the skript
+### Execute the installation skript
 
-Direct to the folder.
+Direct to the folder and run installation skript.
 ```
-cd gitlab-authority
-./main.php <arg1> <arg2>
+cd audit-gitlab-authority
+sudo ./install.sh
 ```
-You have to add 2 Arguments in the correct order:
+You can use audit system wide by calling 'audit [option]'.
+Default Output in .json (to use for example with 'jq').
 
-1. Argument:
-   - **p** for Project
-   - **u** for User
-
-2. Argument
-   - ID of the Project or User
+Option:
+   - **-p** for Project
+   - **-u** for User
 
 For example:
 ```
-./main.php p 2193
-./mail.php u 332
+audit -p 21
+audit -user 332
+```
+more Options: 
+```
+audit --help
+man audit
 ```
 
+## Output for Projekt authority in json with jq-tool:
 
-
-## Output for Projekt authority:
-
-![outputProjekt.jpg](Images/outputProjekt.jpg)
-
-## Output for User authority:
-
-![img_2.png](Images/OutputUser.png)
-
+![OutputProject.png](Images/OutputProject.png)
 
 ## Authors
 Jolien Trog
