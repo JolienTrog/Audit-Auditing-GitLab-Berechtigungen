@@ -12,14 +12,9 @@ Main();
  */
 function Main(): void
 {
-    print PHP_EOL . "audit - Gitlab authorization check" . PHP_EOL;
-    echo "-----------options--------" . PHP_EOL;
     $options = Input();
-    var_dump($options);
 
     $token = GetToken($options);
-
-    echo "-----------request--------" . PHP_EOL;
     $page = $options['page'] ?? 1;
     $perPage = $options['perPage'] ?? 20;
     $response = Request($options, $token);
@@ -27,19 +22,14 @@ function Main(): void
     $totalPages = $response['totalPages'];
     $totalItems = $response['totalItems'];
 
-    echo "Total Pages: $totalPages\n";
-    echo "Total Items: $totalItems\n";
-
     if(isset($options['page'])) {
         if ($page > $totalPages) {
-            printErrorMessage("There is no page $page. Total Amount of pages: $totalPages");
-            exit;
+            printMessage("There is no page $page. Total Amount of pages: $totalPages");
+            exit(1);
         }
-        echo "Processing page $page of $totalPages\n";
     } else {
         // Loop through pages if totalPages is greater than 1
         while ($page <= $totalPages) {
-            echo "Processing page $page of $totalPages\n";
             $options['page'] = $page;
             $response = Request($options, $token);
             $responseData = array_merge($responseData, $response['data']);
@@ -86,38 +76,37 @@ function Input(): array
         // Check if the manpage is installed
         $output = shell_exec('man -w audit 2>/dev/null');
         if (empty($output)) {
-            printErrorMessage("The man page for audit.php is not installed.\n");
+            printMessage("The man page for audit.php is not installed.\n");
             echo "Create the man page with the following command:\n";
             echo "Create a directory: mkdir -p /usr/local/man/man1/ \n";
             echo "Copy the man page from doc/audit.1 to the directory: cp docs/audit.1 /usr/local/man/man1 \n";
             echo "Update man page database: mandb \n\n";
         } else {
-        // Execute local man page for audit.php
             system('man audit');
         }
-        exit;
+        exit(1);
     }
     if (!isset($options["p"]) && !isset($options["u"]) && !isset($options["h"])){
-        printErrorMessage("No correct Option.", "yellow");
+        printMessage("No correct Option.", "yellow");
         print "Please enter options: \n -p with Projekt ID \ -u with User ID \ -h for help \n";
-      exit;
+      exit(1);
     }
     if (isset($options["p"]) && !is_numeric($options["p"])) {
-        printErrorMessage("Error: The projekt ID must be a number.", "yellow");
-        exit;
+        printMessage("Error: The projekt ID must be a number.", "yellow");
+        exit(1);
     }
 
     if (isset($options["u"]) && !is_numeric($options["u"])) {
-        printErrorMessage("Error: The user ID must be a number.", "yellow");
-        exit;
+        printMessage("Error: The user ID must be a number.", "yellow");
+        exit(1);
     }
     if (isset($options["perPage"]) && !is_numeric($options["perPage"])) {
-        printErrorMessage("Error: The amount of output per page must be a number.", "yellow");
-        exit;
+        printMessage("Error: The amount of output per page must be a number.", "yellow");
+        exit(1);
     }
     if (isset($options["page"]) && !is_numeric($options["page"])) {
-        printErrorMessage("Error: The page must be a number.", "yellow");
-        exit;
+        printMessage("Error: The page must be a number.", "yellow");
+        exit(1);
     }
     if (isset($options["csv-file"])) {
         $options["csv-file"] = true;
@@ -153,13 +142,13 @@ function GetToken($options): string
         $token = file_get_contents("accessToken.txt");
     }
     if (empty(trim($token)) || $token == "<Put in here your personal access token>") {
-        printErrorMessage("Error: No access token!");
+        printMessage("Error: No access token!");
         print "Give it as flag -t/--token OR put it in the file 'accessToken.txt' \n";
         exit;
     }
    //Validate access token
     if (!preg_match('/^glpat-[\w-]{20}$/', $token)) {
-        printErrorMessage("The access token appears to be invalide. Check the format.". PHP_EOL, "yellow");
+        printMessage("The access token appears to be invalide. Check the format.". PHP_EOL, "yellow");
         exit;
     }
     $accessToken = "PRIVATE-TOKEN: $token";
@@ -178,9 +167,6 @@ function Request(array $options, string $token): array
     $page = $options['page'];
     $perPage = $options['perPage'];
 
-    //default per page is 20 max is 100
-
-//URL GitLab API for projects $offset = ($page - 1) * $perPage; or users
     if (isset($idProjects)) {
         //Netways URL
         //$URL = "https://git.netways.de/api/v4/projects/$id/members/all?per-page=$perPage&page=&page";
@@ -192,7 +178,8 @@ function Request(array $options, string $token): array
         //URL for test environment:
         $URL = "http://172.17.0.1:80/api/v4/users/$idUser/memberships?per_page=$perPage&page=$page";
     } else {
-        printErrorMessage ("ID is unknown \n", "yellow");
+        printMessage ("ID is unknown \n", "yellow");
+        exit(1);
     }
 
 //start cURL-Handle
@@ -207,8 +194,9 @@ function Request(array $options, string $token): array
 //extract and save error message in a temp. file
     $tempFile = tmpfile();
     if ($tempFile === false) {
+        //diese meldung nicht in standout
         echo "Error: Fail to create a temporarily file for error-messages.";
-        exit;
+        exit(1);
     }
     $metaData = stream_get_meta_data($tempFile);
     $tempFileName = $metaData['uri'];
@@ -231,7 +219,7 @@ function Request(array $options, string $token): array
         echo "cURL-Info: " . print_r($curlInfo, true) . PHP_EOL;
         echo "STDERR Ausgabe: " . $stderrOutput;
         echo $stderrOutput . PHP_EOL;
-        exit;
+        exit(1);
     }
 
     curl_close($ch);
@@ -259,121 +247,7 @@ function Request(array $options, string $token): array
         'totalPages' => $totalPages
     ];
 }
-//function Request(array $options, string $token): array
-//{
-//    $idProjects = $options["p"];
-//    $idUser = $options["u"];
-//    $page = $options['page'] ?? 1;
-//    $perPage = $options['perPage'] ?? 20;
-//
-//    // URL GitLab API for projects or users
-//    if (isset($idProjects)) {
-//        $URL = "http://172.17.0.1:80/api/v4/projects/$idProjects/members/all?per_page=$perPage&page=$page";
-//    } elseif (isset($idUser)) {
-//        $URL = "http://172.17.0.1:80/api/v4/users/$idUser/memberships?per_page=$perPage&page=$page";
-//    } else {
-//        printErrorMessage("ID is unknown \n", "yellow");
-//        return [];
-//    }
-//
-//    // Start cURL-Handle
-//    $ch = curl_init();
-//
-//    // Set cURL options
-//    curl_setopt($ch, CURLOPT_URL, $URL);
-//    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-//    curl_setopt($ch, CURLOPT_HTTPHEADER, array($token, "ACCEPT: application/json"));
-//    curl_setopt($ch, CURLOPT_HEADER, true); // Include header in the output
-//
-//    // Extract and save error message in a temp. file
-//    $tempFile = tmpfile();
-//    if ($tempFile === false) {
-//        echo "Error: Fail to create a temporarily file for error-messages.";
-//        exit;
-//    }
-//    $metaData = stream_get_meta_data($tempFile);
-//    $tempFileName = $metaData['uri'];
-//    curl_setopt($ch, CURLOPT_STDERR, $tempFile);
-//    curl_setopt($ch, CURLOPT_VERBOSE, true);
-//
-//    // Execute cURL request
-//    $response = curl_exec($ch);
-//
-//    // Separate header and body
-//    $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-//    $header = substr($response, 0, $headerSize);
-//    $body = substr($response, $headerSize);
-//
-//    // Error handling
-//    $httpStatusCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-//    $curlError = curl_error($ch);
-//    curl_close($ch);
-//    fclose($tempFile);
-//
-//    // Read the contents of the temporary file
-//    $stderrOutput = file_get_contents($tempFileName);
-//
-//    // Output the error messages
-//    if ($curlError) {
-//        echo "cURL Error: $curlError\n";
-//        echo "Detailed Error: $stderrOutput\n";
-//        exit;
-//    }
-//
-//    // Output the header information
-////    echo "HTTP Status Code: $httpStatusCode\n";
-////    echo "Header Information: $header\n";
-//
-//    // Map of HTTP status codes to their descriptions
-//    $httpStatusDescriptions = [
-//        200 => "OK: The GET, PUT, PATCH or DELETE request was successful, and the resource itself is returned as JSON.",
-//        201 => "Created: The POST request was successful, and the resource is returned as JSON.",
-//        202 => "Accepted: The GET, PUT or DELETE request was successful, and the resource is scheduled for processing.",
-//        204 => "No Content: The server has successfully fulfilled the request, and there is no additional content to send in the response payload body.",
-//        301 => "Moved Permanently: The resource has been definitively moved to the URL given by the Location headers.",
-//        304 => "Not Modified: The resource hasn’t been modified since the last request.",
-//        400 => "Bad Request: A required attribute of the API request is missing.",
-//        401 => "Unauthorized: The user isn’t authenticated. A valid user token is necessary.",
-//        403 => "Forbidden: The request isn’t allowed.",
-//        404 => "Not Found: A resource couldn’t be accessed.",
-//        405 => "Method Not Allowed: The request isn’t supported.",
-//        409 => "Conflict: A conflicting resource already exists.",
-//        412 => "Precondition Failed: The request was denied.",
-//        422 => "Unprocessable: The entity couldn’t be processed.",
-//        429 => "Too Many Requests: The user exceeded the application rate limits.",
-//        500 => "Server Error: While handling the request, something went wrong on the server.",
-//        503 => "Service Unavailable: The server cannot handle the request because the server is temporarily overloaded."
-//    ];
-//
-//    // Output the meaning of the HTTP status code
-//    if (isset($httpStatusDescriptions[$httpStatusCode])) {
-//        echo "Status Description: " . $httpStatusDescriptions[$httpStatusCode] . "\n";
-//    } else {
-//        echo "Status Description: Unknown status code.\n";
-//    }
-//
-//    // Handle specific status codes
-//    if ($httpStatusCode == 404) {
-//        echo "Error: The project or user was not found.\n";
-//        exit;
-//    }
-//
-//    $responseData = [];
-//    if ($body !== false) {
-//        $responseData[] = json_decode($body, true);
-//    }
-//
-//    // Return response data along with pagination info
-//    return [
-//        'data' => $responseData,
-//        'totalItems' => null,
-//        'totalPages' => null
-//    ];
-//}
-/*
- * Fehlermeldungen:
- * unauthorized 	Der Nutzer ist zu dieser Anfrage nicht berechtigt.
- */
+
 /**
  * Convert the access level number to a human-readable access role.
  * @param $responseData Array of response data from the GitLab API.
@@ -451,13 +325,13 @@ function UniqueFileName($options): string
  */
 function Output($responseData, $options) : void
 {
-//Print the input ID of project or user
-    if (isset($options["p"])) print "ProjektID: " . $options["p"] . PHP_EOL;
-    if (isset($options["u"])) print "Username: " . $options["u"] . PHP_EOL;
 
-//check directory writable
+//default output
+    if(!isset($options["json"]) && !isset($options["json-file"]) && !isset($options["csv-file"]) && !isset($options["pretty"])) {
+        print json_encode($responseData);
+    }
 
-    //Output shown in human readable table
+//Output shown in human readable table
     if (isset($options["pretty"])) {
         foreach ($responseData as $member) {
             foreach ($member as $item) {
@@ -475,11 +349,11 @@ function Output($responseData, $options) : void
 
         if ($bytesWritten !== false) {
             $fileUrl = "file://" . realpath($file);
-            printErrorMessage("Data has been successfully saved.", "green");
+            printMessage("Data has been successfully saved.", "green");
             echo "File result.json ($bytesWritten bytes)\n";
             echo "You can access [$fileUrl]\n";
         } else {
-            printErrorMessage("Error: Failed to save data in json-file!");
+            printMessage("Error: Failed to save data in json-file!");
         }
     }
 //Output as pretty JSON
@@ -487,7 +361,7 @@ function Output($responseData, $options) : void
         print json_encode($responseData, JSON_PRETTY_PRINT) . PHP_EOL;
     }
 
-    //Output saved in csv-file
+//Output saved in csv-file
     if (isset($options["csv-file"])) {
         $file = UniqueFileName($options);
         $csvFile = fopen($file, "w");
@@ -506,22 +380,15 @@ function Output($responseData, $options) : void
                 fputcsv($csvFile, $flatRow);
             }
         } else {
-            printErrorMessage("Error: Failed to save data in csv-file! \n");
+            printMessage("Error: Failed to save data in csv-file! \n");
         }
         fclose($csvFile);
 
         $fileUrl = "file://" . realpath($file);
-        printErrorMessage("\nData has been successfully saved.", "green");
+        printMessage("\nData has been successfully saved.", "green");
         echo "\nFile $file\n";
         echo "You can access [$fileUrl]\n";
     }
-
-
-    if(!isset($options["json"]) && !isset($options["json-file"]) && !isset($options["csv-file"]) && !isset($options["pretty"])) {
-            print "Data in pretty json:\n";
-            print json_encode($responseData, JSON_PRETTY_PRINT) . PHP_EOL;
-    }
-
 }
 /**
  * Print an error message in the specified color.
@@ -530,7 +397,7 @@ function Output($responseData, $options) : void
  * @param string $color The color to print the message in (default is red).
  * @return void
  */
-function printErrorMessage(string $message, string $color = 'red'): void
+function printMessage(string $message, string $color = 'red'): void
 {
     $colors = [
         'red' => "\033[31m",
