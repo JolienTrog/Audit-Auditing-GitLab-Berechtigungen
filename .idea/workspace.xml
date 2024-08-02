@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="a1072c61-7a7b-404d-9a8d-bb97989e269d" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/accessToken.txt" beforeDir="false" afterPath="$PROJECT_DIR$/accessToken.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/.github/workflows/tests.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/.php-cs-fixer.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/composer.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/docs/_config.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/docs/index.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/img.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/phpunit.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/src/ArrayToTextTable.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/src/ArrayToTextTableException.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/src/formatters/AlignFormatter.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/src/formatters/BaseColumnFormatter.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/src/formatters/ColorFormatter.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/src/formatters/SprintfFormatter.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/test.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/tests/AlignFormatterTest.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/tests/ColorTest.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/tests/CombinedAlignSprintfFormatterTest.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/php-array-table/tests/SimpleTest.php" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ComposerSettings" notifyAboutMissingVendor="false" synchronizationState="SYNCHRONIZE">
+    <pharConfigPath>$PROJECT_DIR$/php-array-table/composer.json</pharConfigPath>
+    <execution>
+      <executable path="composer" />
+    </execution>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/install.sh" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="PhpWorkspaceProjectConfiguration" interpreter_name="/bin/php" />
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 6
+}</component>
+  <component name="ProjectId" id="2jN8x6DQJfrWFiVNDOcVl16irzX" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "cleanup",
+    "last_opened_file_path": "/home/jtrog/Desktop/Audit/latest/gitlab-authority/Images",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.github.copilot.settings.ApplicationConfigurable",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/Images" />
+      <recent name="$PROJECT_DIR$" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/docs" />
+      <recent name="$PROJECT_DIR$/Images" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-1d06a55b98c1-0b3e54e931b4-JavaScript-PS-241.17011.119" />
+        <option value="bundled-php-predefined-ba97393d7c68-48a1a656d44e-com.jetbrains.php.sharedIndexes-PS-241.17011.119" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="a1072c61-7a7b-404d-9a8d-bb97989e269d" name="Changes" comment="" />
+      <created>1721216417460</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1721216417460</updated>
+      <workItem from="1721216418518" duration="2787000" />
+      <workItem from="1721220189150" duration="2987000" />
+      <workItem from="1721223629688" duration="437000" />
+      <workItem from="1721288979938" duration="10950000" />
+      <workItem from="1721308608149" duration="1843000" />
+      <workItem from="1721310922911" duration="369000" />
+      <workItem from="1721369946556" duration="29278000" />
+      <workItem from="1721631739393" duration="34000" />
+      <workItem from="1721631789356" duration="13291000" />
+      <workItem from="1721646828115" duration="755000" />
+      <workItem from="1722331505233" duration="6000" />
+      <workItem from="1722334322874" duration="10786000" />
+      <workItem from="1722408971679" duration="4079000" />
+      <workItem from="1722425821386" duration="16665000" />
+      <workItem from="1722495804296" duration="3400000" />
+      <workItem from="1722500115884" duration="16619000" />
+      <workItem from="1722582583741" duration="5423000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>
