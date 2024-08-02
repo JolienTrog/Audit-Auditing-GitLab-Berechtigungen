@@ -1,0 +1,58 @@
+.TH audit 0.1 "July 2024"
+.SH NAME
+audit \- GitLab Permission Check
+.SH SYNOPSIS
+.B audit [OPTION]...
+.P
+.B \-p, --project
+.I [projectID]
+.P
+.B \-u, \--user
+.I [UserID]
+
+.SH DESCRIPTION
+.P
+.B audit
+is a programm to interact with the gitlab API to get to know about authority of users.
+
+.SH OPTIONS
+.TP
+.B \-p, --project
+Use for project ID to get user authority for this specific project
+.TP
+.B \-u, --user
+Use for user ID to get all projects for this specific user
+.TP
+.B \-json
+Output in pretty json
+.TP
+.B \-json-file
+Output saved in json-file in the same directory as the script
+.TP
+.B \-csv
+Output saved in csv-file in the same directory as the script
+
+.TP
+.B \-no-accessrole
+By default, access roles are converted from integer values to their corresponding GitLab designations. If numeric values are required, this feature can be disabled with this flag.
+
+.TP
+.B \--page
+Select one specific page
+
+.TP
+.B \--perPage
+Select the amount of items on one page
+
+.SH EXAMPLES
+.B
+audit \-\-project 12345 \-\-token YOUR_ACCESS_TOKEN \-\-json\-file
+.P
+.B
+audit \-\-user 67890 \-\-token YOUR_ACCESS_TOKEN \-\-pretty
+
+.SH AUTHOR
+.B Jolien Trog
+
+.SH COPYRiGHT
+.B do what ever you want with it ;)
